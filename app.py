@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, send_file, redirect, url_for
+from flask import Flask, request, render_template, redirect, url_for
 import os
 import fitz  # PyMuPDF
 import pytesseract
@@ -9,13 +9,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.linear_model import LogisticRegression
 import pickle
-from docx import Document
-from docx.shared import Pt, Inches
-from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.shared import RGBColor
 import re
-from docx.oxml.ns import qn
-from docx.oxml import OxmlElement
 
 app = Flask(__name__)
 
@@ -41,8 +35,7 @@ def extract_text_from_pdf(file_path):
     try:
         doc = fitz.open(file_path)
         for page in doc:
-            page_text = page.get_text("text")
-            text += page_text
+            text += page.get_text("text")
         if len(text.strip()) < 100:
             raise ValueError("Insufficient text from PyMuPDF; fallback to OCR.")
     except:
@@ -56,36 +49,44 @@ def extract_text_from_image(image_file):
     try:
         image = Image.open(image_file)
         return pytesseract.image_to_string(image)
-    except Exception as e:
+    except Exception:
         return ""
 
 def extract_contact_info(text):
     lines = [line.strip() for line in text.splitlines() if line.strip()]
     top_section = "\n".join(lines[:30])
     full_text = "\n".join(lines)
+
     potential_names = [line for line in lines[:10] 
                        if not re.search(r'\d|@|http', line) and len(line.split()) <= 5]
+
     common_titles = ['curriculum', 'vitae', 'resume', 'developer', 'engineer', 'designer']
     name = ""
     for line in potential_names:
         if not any(word in line.lower() for word in common_titles):
             name = line.strip()
             break
+
     emails = re.findall(r'\b[\w\.-]+@[\w\.-]+\.\w+\b', top_section)
     emails = [e for e in emails if not any(dummy in e.lower() for dummy in ['noreply', 'help@', 'example'])]
     email = emails[0] if emails else ""
+
     phone_match = re.search(r'(\+?\d{1,3}[\s\-\.]?)?(\(?\d{2,4}\)?[\s\-\.]?)?\d{3,4}[\s\-\.]?\d{4}', top_section)
     phone = phone_match.group(0) if phone_match else ""
+
     linkedin_match = re.search(r'https?://(www\.)?linkedin\.com/in/[^\s,<>")]+', full_text, re.I)
     linkedin = linkedin_match.group(0) if linkedin_match else ""
+
     github_match = re.search(r'https?://(www\.)?github\.com/[^\s,<>")]+', full_text, re.I)
     github = github_match.group(0) if github_match else ""
+
     urls = re.findall(r'https?://[^\s,<>")]+', full_text)
     portfolio = ""
     for url in urls:
         if "github" not in url.lower() and "linkedin" not in url.lower():
             portfolio = url
             break
+
     return {
         "name": name,
         "email": email,
@@ -129,25 +130,21 @@ def improve_resume(resume_text, jd):
         formatted_resume += f"\n{heading.upper()}\n"
         for line in lines:
             formatted_resume += f"- {line.strip('*')}\n"
+
     prompt = f"""
 You are an ATS resume optimization assistant.
-
 Task:
 Given the resume and job description below, generate a concise, professional, and ATS-friendly resume that fits strictly on ONE page (MAX ~450 words or ~50 bullet points), without adding any new information.
-
 Guidelines:
 - Use only the original resume content.
 - Summarize and condense when needed.
 - Keep section headings and subheadings as close to the original as possible.
 - Optimize alignment to the job description.
 - Output as plain text in resume format.
-
 Resume (Structured Extract):
 {formatted_resume}
-
 Job Description:
 {jd}
-
 Return only the FINAL one-page resume (plain text, no HTML).
 """
     response = model.generate_content(prompt)
@@ -157,10 +154,8 @@ def evaluate_resume(resume, jd):
     prompt = f"""
     Resume:
     {resume}
-
     Job Description:
     {jd}
-
     Identify and list:
     1. Matching skills
     2. Missing skills
@@ -188,7 +183,6 @@ def process_resume(text):
                 sections[current_section].append(line)
     return sections
 
-# Flask routes remain unchanged
 @app.route('/', methods=['GET', 'POST'])
 def index():
     return render_template('index.html', result=None)
@@ -217,17 +211,17 @@ def process():
     with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp:
         resume_file.save(tmp.name)
         if not is_valid_resume(tmp.name):
-            return render_template('index.html', result="<h3 style='color:red;'>❌ Error: Invalid resume file. Please upload a valid resume (PDF or image with meaningful content).</h3>")
+            return render_template('index.html', result="<h3 style='color:red;'>❌ Error: Invalid resume file.</h3>")
         resume_text = ""
         try:
-            if ext in ['.pdf']:
+            if ext == '.pdf':
                 resume_text = extract_text_from_pdf(tmp.name)
             elif ext in ['.png', '.jpg', '.jpeg', '.bmp']:
                 resume_text = extract_text_from_image(tmp.name)
         except Exception as e:
             return render_template('index.html', result=f"<h3 style='color:red;'>❌ Failed to process the file. Error: {str(e)}</h3>")
     if not resume_text or len(resume_text.strip()) < 50:
-        return render_template('index.html', result="<h3 style='color:red;'>❌ Error: Could not extract valid content from the uploaded resume. Please upload a clearer or properly formatted resume.</h3>")
+        return render_template('index.html', result="<h3 style='color:red;'>❌ Could not extract valid content.</h3>")
     if action == 'evaluate':
         evaluation = evaluate_resume(resume_text, jd_text)
         return render_template('index.html', result=evaluation)
@@ -236,9 +230,15 @@ def process():
         return render_template('index.html', result=f"<h3>Match Score: <b>{sim_score:.2f}</b></h3>")
     elif action == 'improve':
         improved = improve_resume(resume_text, jd_text)
-        if not improved or len(improved.strip()) < 100:
-            return render_template('index.html', result="<h3 style='color:red;'>❌ Error: Failed to generate an improved resume. Please ensure the uploaded resume is clear and contains meaningful content.</h3>")
         return render_template('index.html', result=f"<pre>{improved}</pre>")
+    elif action == 'submit_feedback':
+        feedback_score = int(request.form['feedback_score'])
+        vectorizer = TfidfVectorizer(stop_words='english')
+        vectors = vectorizer.fit_transform([resume_text, jd_text])
+        feedback_model.fit(vectors, [feedback_score])
+        with open('feedback_model.pkl', 'wb') as model_file:
+            pickle.dump(feedback_model, model_file)
+        return redirect(url_for('index'))
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
