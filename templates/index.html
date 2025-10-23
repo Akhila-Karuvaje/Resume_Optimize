@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Resume Evaluator</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(135deg, #56d8ff, #457b9d, #a8dadc, #e63946);
+      background-size: 300% 300%;
+      animation: gradientCycle 15s ease infinite;
+    }
+
+    @keyframes gradientCycle {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    body {
+      overflow-y: auto;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    h1 {
+      color: white;
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 2.5em;
+      text-shadow: 2px 2px 8px rgba(0,0,0,0.5);
+      animation: fadeIn 1.5s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    #resumeForm {
+      background: rgba(0, 0, 0, 0.75);
+      padding: 20px 30px;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+      color: #fff;
+      width: 100%;
+      max-width: 700px;
+      animation: fadeIn 1.5s ease-out;
+      border: 3px solid #f39c12;
+      animation: blinkBorder 2s infinite;
+      box-sizing: border-box;
+    }
+
+    @keyframes blinkBorder {
+      0% { border-color: #f39c12; }
+      50% { border-color: transparent; }
+      100% { border-color: #f39c12; }
+    }
+
+    label {
+      font-size: 1.0em;
+      display: block;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+
+    .file-upload-wrapper {
+      position: relative;
+      margin-bottom: 25px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .file-upload-wrapper input[type="file"] {
+      opacity: 0;
+      width: 100%;
+      height: 55px;
+      position: absolute;
+      left: 0;
+      top: 0;
+      cursor: pointer;
+      box-sizing: border-box;
+    }
+
+    .file-upload-label {
+      background: #f4f4f4;
+      color: #000;
+      font-size: 1.0em;
+      border-radius: 10px;
+      padding: 12px;
+      display: block;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+      box-sizing: border-box;
+      transition: all 0.3s ease;
+    }
+
+    textarea,
+    select {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 20px;
+      border: none;
+      border-radius: 10px;
+      background: #f4f4f4;
+      color: #000;
+      font-size: 1.0em;
+      box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+      box-sizing: border-box;
+    }
+
+    #job_description {
+      height: 120px;
+      font-size: 1.2em;
+    }
+
+    button {
+      background: linear-gradient(45deg, #e63946, #f39c12);
+      color: #fff;
+      border: none;
+      padding: 10px 16px;
+      font-size: 1.0em;
+      cursor: pointer;
+      border-radius: 10px;
+      width: 100%;
+      font-weight: bold;
+      transition: all 0.3s ease;
+      box-sizing: border-box;
+    }
+
+    button:hover {
+      background: linear-gradient(45deg, #d62828, #f77f00);
+      transform: scale(1.05);
+    }
+
+    .result {
+      margin-top: 40px;
+      background: #ffffffee;
+      color: #333;
+      padding: 25px;
+      border-radius: 12px;
+      max-width: 800px;
+      width: 100%;
+      overflow-y: auto;
+      max-height: 60vh;
+      font-size: 1rem;
+      line-height: 1.6;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      border-left: 6px solid #f39c12;
+      box-sizing: border-box;
+    }
+
+    .result h3 {
+      margin-top: 0;
+      font-size: 1.5rem;
+      color: #0056b3;
+      border-bottom: 1px solid #ccc;
+      padding-bottom: 5px;
+    }
+
+    .result ul {
+      padding-left: 20px;
+    }
+
+    .result ul li {
+      margin-bottom: 8px;
+    }
+
+    .result strong {
+      color: #e63946;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Resume Evaluator</h1>
+
+    <form id="resumeForm" method="POST" action="/process" enctype="multipart/form-data">
+      <label for="resume">Upload Resume (PDF or Image):</label>
+      <div class="file-upload-wrapper">
+        <label for="resume" class="file-upload-label" id="fileLabel">Choose File</label>
+        <input type="file" name="resume" id="resume" required>
+      </div>
+
+      <label for="job_description">Paste Job Description:</label>
+      <textarea name="job_description" id="job_description" required></textarea>
+
+      <label for="action">Select Action:</label>
+      <select name="action" id="action" required>
+        <option value="evaluate">Evaluate Resume</option>
+        <option value="match">Match Score</option>
+        
+      </select>
+
+      <button type="submit">Submit</button>
+    </form>
+
+    {% if result %}
+      <div class="result">
+        {{ result | safe }}
+      </div>
+    {% endif %}
+  </div>
+
+  <script>
+    document.getElementById('resume').addEventListener('change', function() {
+      const fileName = this.files[0]?.name || "Choose File";
+      document.getElementById('fileLabel').textContent = fileName;
+    });
+  </script>
+</body>
+</html>
