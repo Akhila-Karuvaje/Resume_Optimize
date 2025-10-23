@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.log
+
+# Virtual Environment
+env/
+venv/
+ENV/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+*.tmp
+
+# Application specific
+uploads/
+*.pdf
+*.png
+*.jpg
+*.jpeg
+*.bmp
+*.docx
+feedback_model.pkl
+temp/
+tmp/
+
+# Environment variables
+.env
+.env.local
+
+# Temporary files
+final_resume.docx
