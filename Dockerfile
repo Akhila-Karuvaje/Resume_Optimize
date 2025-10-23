@@ -1,4 +1,3 @@
-# Use official Python slim image
 FROM python:3.10-slim
 
 # Set working directory
@@ -9,22 +8,22 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     libsndfile1 \
     ffmpeg \
-    poppler-utils \
     tesseract-ocr \
-    libgl1 \
+    poppler-utils \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first
 COPY requirements.txt .
 
-# Install Python dependencies
+# Upgrade pip and install Python dependencies
+RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy project files
 COPY . .
 
-# Expose port (Render automatically sets PORT env)
+# Expose port
 EXPOSE 5000
 
-# Command to run the app
+# Run the app
 CMD ["python", "app.py"]
