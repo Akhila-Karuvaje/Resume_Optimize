@@ -14,11 +14,9 @@ import re
 app = Flask(__name__)
 
 # Configure Gemini API
-GEMINI_API_KEY = os.environ.get("AIzaSyDPgVkhl1jW_e89hc9opltcqHdpICYYv3g")
-if not GEMINI_API_KEY:
-    raise ValueError("GEMINI_API_KEY environment variable not set.")
-genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel("gemini-2.0-flash")
+GOOGLE_API_KEY = os.environ.get('GOOGLE_API_KEY', 'AIzaSyDPgVkhl1jW_e89hc9opltcqHdpICYYv3g')
+genai.configure(api_key=GOOGLE_API_KEY)
+model = genai.GenerativeModel('gemini-2.0-flash')
 
 feedback_data = []
 
@@ -243,3 +241,4 @@ def process():
 
 if __name__ == '__main__':
     app.run(debug=False, host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))
+
